@@ -72,7 +72,7 @@ def write_order_to_json(item, quantity, price, buyer, date):
     })
 
     with open(orders_file, 'w', encoding='utf-8') as f:
-        json.dump(data, f)
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 write_order_to_json('scaner', '20', '10000', 'Petrov P.P.', '11.01.2018')
