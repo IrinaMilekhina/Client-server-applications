@@ -1,10 +1,19 @@
-"""Программа-сервер"""
+"""
+Функции сервера:
 
-import socket
-import sys
+принимает сообщение клиента;
+формирует ответ клиенту;
+отправляет ответ клиенту;
+имеет параметры командной строки:
+
+-p — TCP-порт для работы (по умолчанию использует 7777);
+-a — IP-адрес для прослушивания (по умолчанию слушает все доступные адреса).
+"""
 import json
-from common.variables import ACTION, ACCOUNT_NAME, RESPONSE, MAX_CONNECTIONS, \
-    PRESENCE, TIME, USER, ERROR, DEFAULT_PORT
+import sys
+from socket import socket, AF_INET, SOCK_STREAM
+
+from common.configs import DEFAULT_PORT, MAX_CONNECTIONS, ACTION, PRESENCE, TIME, USER, ACCOUNT_NAME, RESPONSE, ERROR
 from common.utils import get_message, send_message
 
 
@@ -26,20 +35,10 @@ def process_client_message(message):
     }
 
 
-def main():
-    '''
-    Загрузка параметров командной строки, если нет параметров, то задаём значения по умоланию.
-    Сначала обрабатываем порт:
-    server.py -p 8079 -a 192.168.0.100
-    :return:
-    '''
-
+def get_port():
     try:
-        if '-p' in sys.argv:
-            listen_port = int(sys.argv[sys.argv.index('-p') + 1])
-        else:
-            listen_port = DEFAULT_PORT
-        if listen_port < 1024 or listen_port > 65535:
+        listen_port = int(sys.argv[sys.argv.index('-p') + 1])
+        if 1024 < listen_port > 65535:
             raise ValueError
     except IndexError:
         print('После параметра -\'p\' необходимо указать номер порта.')
@@ -48,36 +47,40 @@ def main():
         print(
             'В качастве порта может быть указано только число в диапазоне от 1024 до 65535.')
         sys.exit(1)
+    return listen_port
 
-    # Затем загружаем какой адрес слушать
 
+def get_address():
     try:
-        if '-a' in sys.argv:
-            listen_address = sys.argv[sys.argv.index('-a') + 1]
-        else:
-            listen_address = ''
-
+        listen_address = sys.argv[sys.argv.index('-a') + 1]
     except IndexError:
         print(
             'После параметра \'a\'- необходимо указать адрес, который будет слушать сервер.')
         sys.exit(1)
+    return listen_address
 
-    # Готовим сокет
 
-    transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def prepare_server():
+    listen_port = DEFAULT_PORT
+    if '-p' in sys.argv:
+        listen_port = get_port()
+    listen_address = ''
+    if '-a' in sys.argv:
+        listen_address = get_address()
+    transport = socket(AF_INET, SOCK_STREAM)
     transport.bind((listen_address, listen_port))
-
-    # Слушаем порт
-
     transport.listen(MAX_CONNECTIONS)
+    return transport
+
+
+if __name__ == '__main__':
+    serv_socket = prepare_server()
 
     while True:
-        client, client_address = transport.accept()
+        client, client_address = serv_socket.accept()
         try:
-            message_from_cient = get_message(client)
-            print(message_from_cient)
-            # {'action': 'presence', 'time': 1573760672.167031, 'user': {'account_name': 'Guest'}}
-            response = process_client_message(message_from_cient)
+            message_from_client = get_message(client)
+            response = process_client_message(message_from_client)
             send_message(client, response)
             client.close()
         except (ValueError, json.JSONDecodeError):
@@ -85,5 +88,3 @@ def main():
             client.close()
 
 
-if __name__ == '__main__':
-    main()

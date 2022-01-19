@@ -1,12 +1,13 @@
 """Утилиты"""
 
 import json
-from common.variables import MAX_PACKAGE_LENGTH, ENCODING
+from common.configs import MAX_PACKAGE_LENGTH, ENCODING
+
 
 def get_message(client):
     '''
     Утилита приёма и декодирования сообщения
-    принимает байты выдаёт словарь, если приняточто-то другое отдаёт ошибку значения
+    принимает байты выдаёт словарь, если принято что-то другое отдаёт ошибку значения
     :param client:
     :return:
     '''
